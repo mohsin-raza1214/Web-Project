@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optimize Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #05060f;
+    --surface: #0d0f1e;
+    --card: #111427;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --accent3: #43e97b;
+    --text: #e8eaf6;
+    --muted: #8891b4;
+    --border: rgba(108,99,255,0.2);
+    --glow: 0 0 40px rgba(108,99,255,0.3);
+  }
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 9999; opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.2rem 5%;
+    background: rgba(5,6,15,0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    transition: all 0.3s;
+  }
+  nav.scrolled { padding: 0.8rem 5%; }
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+  }
+  .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none;
+    font-size: 0.9rem; font-weight: 500; letter-spacing: 0.5px;
+    position: relative; transition: color 0.3s;
+  }
+  .nav-links a::after {
+    content: ''; position: absolute; bottom: -4px; left: 0; right: 0;
+    height: 1px; background: var(--accent);
+    transform: scaleX(0); transition: transform 0.3s;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-links a:hover::after { transform: scaleX(1); }
+  .nav-cta {
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    color: white; border: none; padding: 0.6rem 1.5rem;
+    border-radius: 50px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-weight: 500;
+    font-size: 0.85rem; letter-spacing: 0.3px;
+    transition: all 0.3s; box-shadow: 0 0 20px rgba(108,99,255,0.4);
+  }
+  .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(108,99,255,0.6); }
+
+  /* SECTIONS */
+  section { padding: 100px 5%; }
+  .section-tag {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(108,99,255,0.1); border: 1px solid var(--border);
+    padding: 0.3rem 1rem; border-radius: 50px;
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 1rem;
+  }
+  .section-tag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  h2.section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 800; line-height: 1.1;
+    letter-spacing: -2px; margin-bottom: 1rem;
+  }
+  h2.section-title span {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  /* Slide progress bar */
+  .slide-progress {
+    position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 20;
+    background: rgba(255,255,255,0.06);
+  }
+  .slide-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.1s linear;
+    box-shadow: 0 0 8px var(--accent);
+  }
+  /* Slide counter */
+  .slide-counter {
+    position: absolute; top: 50%; left: 3rem;
+    transform: translateY(-50%);
+    z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+  }
+  .slide-counter-current {
+    font-family: 'Syne', sans-serif; font-size: 2.5rem; font-weight: 800;
+    color: white; line-height: 1; opacity: 0.15;
+  }
+  .slide-counter-line { width: 1px; height: 40px; background: rgba(255,255,255,0.15); }
+  .slide-counter-total {
+    font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 600;
+    color: white; opacity: 0.1;
+  }
+  @media(max-width:768px){ .slide-counter { display: none; } }
+
+  /* ===== HOME / SLIDER ===== */
+  #home { padding: 0; position: relative; height: 100vh; overflow: hidden; }
+  .slider {
+    position: relative; width: 100%; height: 100%;
+    overflow: hidden;
+  }
+  .slides-track {
+    display: flex;
+    width: 300%;
+    height: 100%;
+    transition: transform 0.75s cubic-bezier(0.77, 0, 0.18, 1);
+  }
+  .slide {
+    position: relative;
+    width: calc(100% / 3);
+    flex-shrink: 0;
+    height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .slide-bg {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    filter: brightness(0.35);
+  }
+  .slide-1 .slide-bg { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+  .slide-2 .slide-bg { background: linear-gradient(135deg, #0d0d0d 0%, #1a0a2e 50%, #2d1b69 100%); }
+  .slide-3 .slide-bg { background: linear-gradient(135deg, #0a0a1a 0%, #1a0a1a 50%, #3d1a2e 100%); }
+
+  /* Animated BG orbs per slide */
+  .slide-orbs { position: absolute; inset: 0; overflow: hidden; }
+  .orb {
+    position: absolute; border-radius: 50%;
+    filter: blur(80px); opacity: 0.4; animation: floatOrb 8s ease-in-out infinite;
+  }
+  .orb1 { width: 400px; height: 400px; background: var(--accent); top: -100px; left: -100px; animation-delay: 0s; }
+  .orb2 { width: 300px; height: 300px; background: var(--accent2); bottom: -100px; right: -50px; animation-delay: 3s; }
+  .orb3 { width: 250px; height: 250px; background: var(--accent3); top: 50%; left: 50%; animation-delay: 1.5s; }
+  @keyframes floatOrb {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(30px, -30px) scale(1.1); }
+  }
+
+  /* Floating social icons bg */
+  .float-icons { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .float-icon {
+    position: absolute; font-size: 3rem; opacity: 0.05;
+    animation: floatIcon linear infinite;
+  }
+  @keyframes floatIcon {
+    0% { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.05; }
+    90% { opacity: 0.05; }
+    100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+  }
+
+  .slide-content {
+    position: relative; z-index: 2; text-align: center; padding: 0 5%;
+    max-width: 900px;
+  }
+  .slide-badge {
+    display: inline-block; background: rgba(108,99,255,0.2);
+    border: 1px solid rgba(108,99,255,0.4); padding: 0.4rem 1.2rem;
+    border-radius: 50px; font-size: 0.8rem; font-weight: 600;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--accent);
+    margin-bottom: 1.5rem; animation: fadeSlideUp 0.6s 0.2s both;
+  }
+  .slide-content h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.5rem, 6vw, 5.5rem);
+    font-weight: 800; line-height: 1.05; letter-spacing: -3px;
+    margin-bottom: 1.5rem;
+    animation: fadeSlideUp 0.6s 0.4s both;
+  }
+  .slide-content h1 .highlight {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .slide-content p {
+    color: var(--muted); font-size: clamp(1rem, 1.8vw, 1.2rem);
+    line-height: 1.7; max-width: 600px; margin: 0 auto 2rem;
+    animation: fadeSlideUp 0.6s 0.6s both;
+  }
+  .slide-btns {
+    display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+    animation: fadeSlideUp 0.6s 0.8s both;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    color: white; border: none; padding: 0.9rem 2.2rem;
+    border-radius: 50px; cursor: pointer; font-size: 0.95rem;
+    font-weight: 600; font-family: 'DM Sans', sans-serif;
+    transition: all 0.3s; box-shadow: 0 0 30px rgba(108,99,255,0.4);
+  }
+  .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 0 50px rgba(108,99,255,0.6); }
+  .btn-outline {
+    background: transparent; color: var(--text);
+    border: 1px solid rgba(255,255,255,0.2); padding: 0.9rem 2.2rem;
+    border-radius: 50px; cursor: pointer; font-size: 0.95rem;
+    font-weight: 500; font-family: 'DM Sans', sans-serif;
+    transition: all 0.3s;
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,0.05); }
+  .btn-whatsapp {
+    background: linear-gradient(135deg, #25d366, #128c7e);
+    color: white; border: none; padding: 0.9rem 2rem;
+    border-radius: 50px; cursor: pointer; font-size: 0.95rem;
+    font-weight: 600; font-family: 'DM Sans', sans-serif;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;
+    transition: all 0.3s; box-shadow: 0 0 25px rgba(37,211,102,0.35);
+    animation: fadeSlideUp 0.6s 1s both;
+  }
+  .btn-whatsapp:hover { transform: translateY(-3px); box-shadow: 0 0 40px rgba(37,211,102,0.6); }
+
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Slider controls */
+  .slider-dots {
+    position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 0.6rem; z-index: 10;
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,0.3); cursor: pointer;
+    transition: all 0.3s;
+  }
+  .dot.active { background: var(--accent); width: 24px; border-radius: 4px; box-shadow: 0 0 10px var(--accent); }
+  .slider-arrows {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 100%; display: flex; justify-content: space-between;
+    padding: 0 2rem; z-index: 10; pointer-events: none;
+  }
+  .arrow {
+    pointer-events: all; width: 48px; height: 48px;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.3s; font-size: 1.2rem; color: white;
+  }
+  .arrow:hover { background: rgba(108,99,255,0.3); border-color: var(--accent); transform: scale(1.1); }
+
+  /* Scroll indicator */
+  .scroll-indicator {
+    position: absolute; bottom: 2rem; right: 3rem; z-index: 10;
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    color: var(--muted); font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  .scroll-line {
+    width: 1px; height: 50px;
+    background: linear-gradient(to bottom, transparent, var(--accent));
+  }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(8px)} }
+
+  /* Stats bar */
+  .stats-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(13,15,30,0.9); backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: center; z-index: 5;
+    padding: 1.2rem 5%;
+  }
+  .stats-bar-inner { display: flex; gap: 4rem; align-items: center; }
+  .stat-item { text-align: center; }
+  .stat-num {
+    font-family: 'Syne', sans-serif; font-size: 1.6rem;
+    font-weight: 800; color: var(--accent);
+    display: block; line-height: 1;
+  }
+  .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
+  .stat-divider { width: 1px; height: 40px; background: var(--border); }
+
+  /* ===== ABOUT ===== */
+  #about { background: var(--surface); position: relative; overflow: hidden; }
+  #about::before {
+    content: ''; position: absolute; top: -200px; right: -200px;
+    width: 600px; height: 600px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(108,99,255,0.08), transparent);
+  }
+  .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
+  .about-visual {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .about-card-wrap {
+    position: relative; width: 340px; height: 420px;
+  }
+  .about-main-card {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, var(--card), #1a1d35);
+    border: 1px solid var(--border); border-radius: 24px;
+    overflow: hidden; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1rem;
+    box-shadow: var(--glow);
+  }
+  .about-avatar {
+    width: 100px; height: 100px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.5rem; border: 3px solid rgba(255,255,255,0.1);
+    box-shadow: 0 0 30px rgba(108,99,255,0.4);
+  }
+  .about-card-name {
+    font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700;
+  }
+  .about-card-title { color: var(--muted); font-size: 0.85rem; }
+  .about-card-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+  .badge {
+    background: rgba(108,99,255,0.15); border: 1px solid var(--border);
+    padding: 0.25rem 0.8rem; border-radius: 50px;
+    font-size: 0.7rem; font-weight: 600; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .floating-card {
+    position: absolute; background: var(--card);
+    border: 1px solid var(--border); border-radius: 16px;
+    padding: 0.8rem 1.2rem; box-shadow: var(--glow);
+    animation: floatCard 4s ease-in-out infinite;
+    display: flex; align-items: center; gap: 0.6rem; white-space: nowrap;
+    font-size: 0.8rem; font-weight: 500;
+  }
+  .floating-card:nth-child(2) { top: -20px; right: -30px; animation-delay: 0s; }
+  .floating-card:nth-child(3) { bottom: 40px; right: -40px; animation-delay: 1.5s; }
+  .floating-card:nth-child(4) { bottom: -20px; left: -20px; animation-delay: 3s; }
+  .fc-icon { font-size: 1.2rem; }
+  @keyframes floatCard {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .about-content h2 { margin-bottom: 1.5rem; }
+  .about-content p { color: var(--muted); line-height: 1.8; margin-bottom: 1rem; font-size: 0.95rem; }
+  .about-skills { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
+  .skill-bar { }
+  .skill-bar-label { display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.85rem; }
+  .skill-bar-track { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+  .skill-bar-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .skill-bar-fill.animated { transform: scaleX(1); }
+
+  /* ===== SERVICES ===== */
+  #services { position: relative; overflow: hidden; }
+  #services::before {
+    content: ''; position: absolute; bottom: -300px; left: -300px;
+    width: 700px; height: 700px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,101,132,0.06), transparent);
+  }
+  .services-header { text-align: center; margin-bottom: 4rem; }
+  .services-header p { color: var(--muted); max-width: 500px; margin: 0 auto; line-height: 1.7; }
+  .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+  .service-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 2rem;
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative; overflow: hidden; cursor: pointer;
+  }
+  .service-card::before {
+    content: ''; position: absolute; inset: 0; opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .service-card:hover { transform: translateY(-8px); border-color: rgba(108,99,255,0.4); }
+  .service-card:hover::before { opacity: 1; }
+  .service-card:hover .service-glow { opacity: 1; }
+  .service-glow {
+    position: absolute; top: -50%; right: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle at top right, rgba(108,99,255,0.08), transparent 60%);
+    opacity: 0; transition: opacity 0.4s; pointer-events: none;
+  }
+  .service-icon {
+    width: 56px; height: 56px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; margin-bottom: 1.2rem;
+    position: relative; z-index: 1;
+  }
+  .service-card h3 {
+    font-family: 'Syne', sans-serif; font-size: 1.15rem;
+    font-weight: 700; margin-bottom: 0.6rem; position: relative; z-index: 1;
+  }
+  .service-card p { color: var(--muted); font-size: 0.85rem; line-height: 1.7; position: relative; z-index: 1; }
+  .service-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; position: relative; z-index: 1; }
+  .service-tag {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+    padding: 0.2rem 0.6rem; border-radius: 4px;
+    font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  /* FB */
+  .fb .service-icon { background: rgba(24,119,242,0.15); color: #1877f2; }
+  /* IG */
+  .ig .service-icon { background: rgba(225,48,108,0.15); color: #e1306c; }
+  /* TW */
+  .tw .service-icon { background: rgba(29,161,242,0.15); color: #1da1f2; }
+  /* YT */
+  .yt .service-icon { background: rgba(255,0,0,0.15); color: #ff0000; }
+  /* TT */
+  .tt .service-icon { background: rgba(0,0,0,0.3); color: #fff; }
+  /* LI */
+  .li .service-icon { background: rgba(0,119,181,0.15); color: #0077b5; }
+
+  /* ===== FEEDBACK ===== */
+  #feedback {
+    background: var(--surface); position: relative; overflow: hidden;
+    padding: 100px 5%;
+  }
+  .feedback-header { text-align: center; margin-bottom: 4rem; }
+  .feedback-scroll-container { overflow: hidden; position: relative; }
+  .feedback-track {
+    display: flex; gap: 1.5rem;
+    animation: scrollFeedback 25s linear infinite;
+    width: max-content;
+  }
+  .feedback-track:hover { animation-play-state: paused; }
+  @keyframes scrollFeedback {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  .feedback-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 1.8rem 2rem;
+    width: 340px; flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .feedback-card:hover { border-color: rgba(108,99,255,0.4); transform: translateY(-4px); }
+  .feedback-stars { color: #fbbf24; font-size: 0.9rem; margin-bottom: 0.8rem; letter-spacing: 2px; }
+  .feedback-text { color: var(--muted); font-size: 0.9rem; line-height: 1.7; margin-bottom: 1.2rem; font-style: italic; }
+  .feedback-author { display: flex; align-items: center; gap: 0.8rem; }
+  .feedback-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.9rem; flex-shrink: 0;
+  }
+  .feedback-author-info strong { display: block; font-size: 0.9rem; font-weight: 600; }
+  .feedback-author-info span { font-size: 0.75rem; color: var(--muted); }
+  .feedback-scroll-fade-l, .feedback-scroll-fade-r {
+    position: absolute; top: 0; bottom: 0; width: 100px; z-index: 2; pointer-events: none;
+  }
+  .feedback-scroll-fade-l { left: 0; background: linear-gradient(to right, var(--surface), transparent); }
+  .feedback-scroll-fade-r { right: 0; background: linear-gradient(to left, var(--surface), transparent); }
+
+  /* ===== PROJECTS ===== */
+  #projects { position: relative; overflow: hidden; }
+  .projects-header { text-align: center; margin-bottom: 4rem; }
+  .projects-tabs {
+    display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 3rem;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 50px; padding: 0.4rem; width: fit-content; margin-inline: auto;
+  }
+  .tab {
+    padding: 0.5rem 1.5rem; border-radius: 50px; cursor: pointer;
+    font-size: 0.85rem; font-weight: 500; transition: all 0.3s;
+    color: var(--muted); border: none; background: transparent;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .tab.active { background: var(--accent); color: white; box-shadow: 0 0 15px rgba(108,99,255,0.4); }
+  .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+  .project-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 1.8rem; position: relative;
+    overflow: hidden; transition: all 0.4s;
+    opacity: 0; transform: translateY(30px);
+  }
+  .project-card.visible { opacity: 1; transform: translateY(0); }
+  .project-card.hidden { display: none; }
+  .project-card:hover { transform: translateY(-6px); border-color: rgba(108,99,255,0.3); }
+  .project-status {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.3rem 0.9rem; border-radius: 50px;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; margin-bottom: 1rem;
+  }
+  .status-done { background: rgba(67,233,123,0.1); color: var(--accent3); border: 1px solid rgba(67,233,123,0.2); }
+  .status-process { background: rgba(251,191,36,0.1); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
+  .status-review { background: rgba(108,99,255,0.1); color: var(--accent); border: 1px solid var(--border); }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  }
+  .status-done .status-dot { background: var(--accent3); animation: pulseDot 2s infinite; }
+  .status-process .status-dot { background: #fbbf24; animation: pulseDot 1.5s infinite; }
+  .status-review .status-dot { background: var(--accent); animation: pulseDot 2.5s infinite; }
+  @keyframes pulseDot {
+    0%,100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; }
+  }
+  .project-card h3 { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .project-card p { color: var(--muted); font-size: 0.83rem; line-height: 1.6; margin-bottom: 1.2rem; }
+  .project-meta { display: flex; align-items: center; justify-content: space-between; }
+  .project-platform {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.75rem; color: var(--muted);
+  }
+  .project-growth {
+    font-size: 0.75rem; font-weight: 700;
+    color: var(--accent3); background: rgba(67,233,123,0.08);
+    padding: 0.2rem 0.6rem; border-radius: 4px;
+  }
+  /* Progress bar on project cards */
+  .project-progress { margin-top: 1rem; }
+  .project-progress-label { display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.75rem; color: var(--muted); }
+  .project-progress-track { height: 3px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+  .project-progress-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  /* Ripple on card hover */
+  .project-card::after {
+    content: ''; position: absolute;
+    top: var(--y,50%); left: var(--x,50%);
+    width: 0; height: 0;
+    background: rgba(108,99,255,0.1);
+    border-radius: 50%;
+    transform: translate(-50%,-50%);
+    transition: width 0.6s, height 0.6s, opacity 0.6s;
+  }
+  .project-card:hover::after { width: 400px; height: 400px; opacity: 0; }
+
+  /* ===== FOOTER ===== */
+  footer {
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding: 4rem 5% 2rem; text-align: center;
+  }
+  .footer-logo {
+    font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: -1px; display: block; margin-bottom: 1rem;
+  }
+  footer p { color: var(--muted); font-size: 0.85rem; margin-bottom: 2rem; }
+  .footer-links { display: flex; justify-content: center; gap: 2rem; list-style: none; margin-bottom: 3rem; }
+  .footer-links a { color: var(--muted); text-decoration: none; font-size: 0.85rem; transition: color 0.3s; }
+  .footer-links a:hover { color: var(--accent); }
+  .footer-social { display: flex; justify-content: center; gap: 1rem; margin-bottom: 3rem; flex-wrap: wrap; }
+  .social-btn {
+    width: 48px; height: 48px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    text-decoration: none; transition: all 0.35s cubic-bezier(0.22,1,0.36,1);
+    border: 1px solid rgba(255,255,255,0.08);
+    position: relative; overflow: hidden;
+  }
+  .social-btn svg { width: 22px; height: 22px; position: relative; z-index: 1; transition: transform 0.3s; }
+  .social-btn::before {
+    content: ''; position: absolute; inset: 0; opacity: 0;
+    transition: opacity 0.3s; border-radius: inherit;
+  }
+  .social-btn:hover { transform: translateY(-5px); border-color: transparent; box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
+  .social-btn:hover::before { opacity: 1; }
+  .social-btn:hover svg { transform: scale(1.15); }
+
+  /* Facebook */
+  .social-btn.fb-btn { background: rgba(24,119,242,0.12); border-color: rgba(24,119,242,0.25); }
+  .social-btn.fb-btn::before { background: linear-gradient(135deg, #1877f2, #0a5dc9); }
+  .social-btn.fb-btn svg { fill: #1877f2; }
+  .social-btn.fb-btn:hover svg { fill: white; }
+
+  /* Instagram */
+  .social-btn.ig-btn { background: rgba(225,48,108,0.12); border-color: rgba(225,48,108,0.25); }
+  .social-btn.ig-btn::before { background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af, #515bd4); }
+  .social-btn.ig-btn svg { fill: url(#ig-grad); }
+  .social-btn.ig-btn:hover svg { fill: white; }
+
+  /* WhatsApp */
+  .social-btn.wa-btn { background: rgba(37,211,102,0.12); border-color: rgba(37,211,102,0.25); }
+  .social-btn.wa-btn::before { background: linear-gradient(135deg, #25d366, #128c7e); }
+  .social-btn.wa-btn svg { fill: #25d366; }
+  .social-btn.wa-btn:hover svg { fill: white; }
+
+  /* Twitter */
+  .social-btn.tw-btn { background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); }
+  .social-btn.tw-btn::before { background: #000; }
+  .social-btn.tw-btn svg { fill: white; }
+
+  /* LinkedIn */
+  .social-btn.li-btn { background: rgba(0,119,181,0.12); border-color: rgba(0,119,181,0.25); }
+  .social-btn.li-btn::before { background: linear-gradient(135deg, #0077b5, #004e80); }
+  .social-btn.li-btn svg { fill: #0077b5; }
+  .social-btn.li-btn:hover svg { fill: white; }
+
+  /* TikTok */
+  .social-btn.tt-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+  .social-btn.tt-btn::before { background: linear-gradient(135deg, #010101, #69c9d0); }
+  .social-btn.tt-btn svg { fill: white; }
+
+  /* ===== FLOATING WHATSAPP ===== */
+  .wa-float {
+    position: fixed; bottom: 2rem; right: 2rem; z-index: 999;
+    width: 60px; height: 60px; border-radius: 50%;
+    background: linear-gradient(135deg, #25d366, #128c7e);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(37,211,102,0.5);
+    text-decoration: none; transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
+    animation: waPulse 2.5s ease-in-out infinite;
+  }
+  .wa-float:hover { transform: scale(1.15); box-shadow: 0 6px 35px rgba(37,211,102,0.7); animation: none; }
+  .wa-float svg { width: 30px; height: 30px; fill: white; }
+  .wa-float-tooltip {
+    position: absolute; right: 72px; top: 50%; transform: translateY(-50%);
+    background: var(--card); border: 1px solid var(--border);
+    padding: 0.4rem 1rem; border-radius: 50px;
+    font-size: 0.8rem; white-space: nowrap; color: var(--text);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    transform: translateY(-50%) translateX(8px);
+  }
+  .wa-float:hover .wa-float-tooltip { opacity: 1; transform: translateY(-50%) translateX(0); }
+  @keyframes waPulse {
+    0%,100% { box-shadow: 0 4px 20px rgba(37,211,102,0.5), 0 0 0 0 rgba(37,211,102,0.4); }
+    50% { box-shadow: 0 4px 20px rgba(37,211,102,0.5), 0 0 0 14px rgba(37,211,102,0); }
+  }
+  .footer-copy { color: var(--muted); font-size: 0.75rem; border-top: 1px solid var(--border); padding-top: 2rem; }
+
+  /* RESPONSIVE */
+  @media(max-width:768px) {
+    .about-grid { grid-template-columns: 1fr; gap: 3rem; }
+    .about-card-wrap { width: 280px; height: 360px; margin: 0 auto; }
+    .stats-bar-inner { gap: 2rem; flex-wrap: wrap; justify-content: center; }
+    .stat-divider { display: none; }
+    nav { padding: 1rem 4%; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="nav-logo">OptimizeHub✦</div>
+  <ul class="nav-links">
+    <li><a href="#home">Home</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#services">My Services</a></li>
+  </ul>
+  <button class="nav-cta" onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})">Get Started →</button>
+</nav>
+
+<!-- ===== HOME SLIDER ===== -->
+<section id="home">
+  <div class="slider" id="slider">
+  <!-- Progress bar -->
+  <div class="slide-progress"><div class="slide-progress-fill" id="slideProgressFill"></div></div>
+  <!-- Slide counter -->
+  <div class="slide-counter">
+    <div class="slide-counter-current" id="slideCounterCurrent">01</div>
+    <div class="slide-counter-line"></div>
+    <div class="slide-counter-total">03</div>
+  </div>
+  <div class="slides-track" id="slidesTrack">
+
+    <!-- Slide 1 -->
+    <div class="slide active slide-1" id="slide-0">
+      <div class="slide-bg"></div>
+      <div class="slide-orbs">
+        <div class="orb orb1"></div>
+        <div class="orb orb2"></div>
+      </div>
+      <div class="float-icons" id="fi0"></div>
+      <div class="slide-content">
+        <div class="slide-badge">✦ Social Media Expert</div>
+        <h1>Turn Followers Into <span class="highlight">Revenue</span> Machines</h1>
+        <p>Expert strategies for organic growth, content optimization, and building audiences that actually convert into customers.</p>
+        <div class="slide-btns">
+          <button class="btn-primary" onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})">Explore Services</button>
+          <button class="btn-outline" onclick="document.getElementById('about').scrollIntoView({behavior:'smooth'})">About Me</button>
+          <a class="btn-whatsapp" href="https://wa.me/+923237109015" target="_blank">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;fill:white;flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp Me
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 2 -->
+    <div class="slide slide-2" id="slide-1">
+      <div class="slide-bg"></div>
+      <div class="slide-orbs">
+        <div class="orb" style="width:350px;height:350px;background:var(--accent2);top:-50px;right:-50px;animation-delay:0s"></div>
+        <div class="orb" style="width:280px;height:280px;background:var(--accent);bottom:-80px;left:-80px;animation-delay:2s"></div>
+      </div>
+      <div class="float-icons" id="fi1"></div>
+      <div class="slide-content">
+        <div class="slide-badge">📈 Organic Growth</div>
+        <h1>Zero Ads. <span class="highlight">100% Organic</span> Growth Strategy</h1>
+        <p>Build sustainable, authentic audiences through proven content strategies, hashtag optimization, and engagement techniques.</p>
+        <div class="slide-btns">
+          <button class="btn-primary" onclick="document.getElementById('projects').scrollIntoView({behavior:'smooth'})">View Projects</button>
+          <button class="btn-outline" onclick="document.getElementById('feedback').scrollIntoView({behavior:'smooth'})">Client Results</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 3 -->
+    <div class="slide slide-3" id="slide-2">
+      <div class="slide-bg"></div>
+      <div class="slide-orbs">
+        <div class="orb" style="width:400px;height:400px;background:var(--accent3);bottom:-100px;right:-100px;animation-delay:0.5s;opacity:0.25"></div>
+        <div class="orb" style="width:300px;height:300px;background:var(--accent2);top:-50px;left:-50px;animation-delay:2.5s"></div>
+      </div>
+      <div class="float-icons" id="fi2"></div>
+      <div class="slide-content">
+        <div class="slide-badge">🔥 Account Optimization</div>
+        <h1>Optimize Every <span class="highlight">Platform</span> for Maximum Reach</h1>
+        <p>From Facebook to TikTok — complete profile optimization, bio crafting, content calendars and algorithm-friendly posting strategies.</p>
+        <div class="slide-btns">
+          <button class="btn-primary" onclick="document.getElementById('about').scrollIntoView({behavior:'smooth'})">Meet Your Expert</button>
+          <button class="btn-outline" onclick="document.getElementById('feedback').scrollIntoView({behavior:'smooth'})">Testimonials</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /slides-track -->
+
+    <!-- Arrows -->
+    <div class="slider-arrows">
+      <div class="arrow" id="prevBtn">‹</div>
+      <div class="arrow" id="nextBtn">›</div>
+    </div>
+
+    <!-- Dots -->
+    <div class="slider-dots">
+      <div class="dot active" onclick="goTo(0)"></div>
+      <div class="dot" onclick="goTo(1)"></div>
+      <div class="dot" onclick="goTo(2)"></div>
+    </div>
+
+    <!-- Scroll -->
+    <div class="scroll-indicator">
+      <div class="scroll-line"></div>
+      <span>Scroll</span>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="stats-bar">
+      <div class="stats-bar-inner">
+        <div class="stat-item">
+          <span class="stat-num" data-count="150">0</span>
+          <span class="stat-label">Projects Done</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-num" data-count="98">0</span>
+          <span class="stat-label">Happy Clients</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-num" data-count="5">0</span>
+          <span class="stat-label">Years Exp.</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-num" data-count="2">0</span>
+          <span class="stat-label">M+ Followers Grown</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===== ABOUT ===== -->
+<section id="about">
+  <div class="about-grid">
+    <div class="about-visual">
+      <div class="about-card-wrap">
+        <div class="about-main-card">
+          <div class="about-avatar">🚀</div>
+          <div class="about-card-name">OptimizeHub</div>
+          <div class="about-card-title">Social Media Strategist</div>
+          <div class="about-card-badges">
+            <span class="badge">Meta Certified</span>
+            <span class="badge">Growth Expert</span>
+            <span class="badge">5★ Rated</span>
+          </div>
+        </div>
+        <div class="floating-card">
+          <span class="fc-icon">📊</span>
+          <span>+340% avg growth</span>
+        </div>
+        <div class="floating-card">
+          <span class="fc-icon">🎯</span>
+          <span>Organic reach specialist</span>
+        </div>
+        <div class="floating-card">
+          <span class="fc-icon">⚡</span>
+          <span>Fast turnaround</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="about-content">
+      <div class="section-tag">About Me</div>
+      <h2 class="section-title">Helping brands <span>dominate</span> social media</h2>
+      <p>I'm, a social media growth strategist with 5+ years of experience helping businesses and creators build powerful online presences without spending a dime on ads.</p>
+      <p>My approach combines deep platform algorithm expertise, data-driven content strategies, and authentic community-building techniques that deliver real, lasting results.</p>
+      <p>From local businesses to global brands — I've helped clients across all industries unlock the true potential of their social media accounts.</p>
+
+      <div class="about-skills">
+        <div class="skill-bar">
+          <div class="skill-bar-label"><span>Content Strategy</span><span style="color:var(--accent)">95%</span></div>
+          <div class="skill-bar-track"><div class="skill-bar-fill" style="--w:0.95"></div></div>
+        </div>
+        <div class="skill-bar">
+          <div class="skill-bar-label"><span>Organic Growth</span><span style="color:var(--accent)">92%</span></div>
+          <div class="skill-bar-track"><div class="skill-bar-fill" style="--w:0.92"></div></div>
+        </div>
+        <div class="skill-bar">
+          <div class="skill-bar-label"><span>Account Optimization</span><span style="color:var(--accent)">98%</span></div>
+          <div class="skill-bar-track"><div class="skill-bar-fill" style="--w:0.98"></div></div>
+        </div>
+        <div class="skill-bar">
+          <div class="skill-bar-label"><span>Analytics & Insights</span><span style="color:var(--accent)">88%</span></div>
+          <div class="skill-bar-track"><div class="skill-bar-fill" style="--w:0.88"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SERVICES ===== -->
+<section id="services">
+  <div class="services-header">
+    <div class="section-tag">My Services</div>
+    <h2 class="section-title">Every platform, <span>mastered</span></h2>
+    <p>Specialized growth strategies for each social media platform — tailored to its unique algorithm and audience behavior.</p>
+  </div>
+  <div class="services-grid">
+
+    <div class="service-card fb">
+      <div class="service-glow"></div>
+      <div class="service-icon">📘</div>
+      <h3>Facebook Growth</h3>
+      <p>Page optimization, group strategy, organic reach boosting, and content calendar management for maximum Facebook engagement.</p>
+      <div class="service-tags">
+        <span class="service-tag">Page Audit</span>
+        <span class="service-tag">Group Building</span>
+        <span class="service-tag">Algorithm</span>
+      </div>
+    </div>
+
+    <div class="service-card ig">
+      <div class="service-glow"></div>
+      <div class="service-icon">📸</div>
+      <h3>Instagram Optimization</h3>
+      <p>Reels strategy, hashtag research, bio optimization, highlights structure, and aesthetic feed planning for explosive IG growth.</p>
+      <div class="service-tags">
+        <span class="service-tag">Reels Strategy</span>
+        <span class="service-tag">Hashtags</span>
+        <span class="service-tag">Aesthetic</span>
+      </div>
+    </div>
+
+    <div class="service-card tw">
+      <div class="service-glow"></div>
+      <div class="service-icon">🐦</div>
+      <h3>Twitter / X Growth</h3>
+      <p>Thread strategy, engagement optimization, tweet timing, and building a loyal following through authentic conversations.</p>
+      <div class="service-tags">
+        <span class="service-tag">Threads</span>
+        <span class="service-tag">Engagement</span>
+        <span class="service-tag">Timing</span>
+      </div>
+    </div>
+
+    <div class="service-card yt">
+      <div class="service-glow"></div>
+      <div class="service-icon">▶️</div>
+      <h3>YouTube Channel SEO</h3>
+      <p>Title optimization, thumbnail strategy, description SEO, playlist structure, and audience retention techniques for channel growth.</p>
+      <div class="service-tags">
+        <span class="service-tag">SEO</span>
+        <span class="service-tag">Thumbnails</span>
+        <span class="service-tag">Retention</span>
+      </div>
+    </div>
+
+    <div class="service-card tt">
+      <div class="service-glow"></div>
+      <div class="service-icon">🎵</div>
+      <h3>TikTok Virality</h3>
+      <p>Hook crafting, trending audio strategy, niche targeting, and posting schedule optimization for TikTok's FYP algorithm.</p>
+      <div class="service-tags">
+        <span class="service-tag">FYP Strategy</span>
+        <span class="service-tag">Hooks</span>
+        <span class="service-tag">Trending Audio</span>
+      </div>
+    </div>
+
+    <div class="service-card li">
+      <div class="service-glow"></div>
+      <div class="service-icon">💼</div>
+      <h3>LinkedIn Authority</h3>
+      <p>Profile optimization, thought leadership content, B2B network growth, and positioning for professional brand visibility.</p>
+      <div class="service-tags">
+        <span class="service-tag">Profile SEO</span>
+        <span class="service-tag">B2B Growth</span>
+        <span class="service-tag">Thought Leader</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===== FEEDBACK ===== -->
+<section id="feedback">
+  <div class="feedback-header">
+    <div class="section-tag">Testimonials</div>
+    <h2 class="section-title">Real results, <span>real people</span></h2>
+  </div>
+  <div class="feedback-scroll-container">
+    <div class="feedback-scroll-fade-l"></div>
+    <div class="feedback-scroll-fade-r"></div>
+    <div class="feedback-track" id="feedbackTrack">
+      <!-- Cards injected by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ===== PROJECTS ===== -->
+<section id="projects">
+  <div class="projects-header">
+    <div class="section-tag">Portfolio</div>
+    <h2 class="section-title">Work that <span>speaks</span> for itself</h2>
+  </div>
+
+  <div class="projects-tabs">
+    <button class="tab active" onclick="filterProjects('all', this)">All</button>
+    <button class="tab" onclick="filterProjects('done', this)">✓ Completed</button>
+    <button class="tab" onclick="filterProjects('process', this)">⟳ In Progress</button>
+    <button class="tab" onclick="filterProjects('review', this)">◎ Under Review</button>
+  </div>
+
+  <div class="projects-grid" id="projectsGrid">
+    <!-- Injected by JS -->
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-logo">GrowthLab✦</span>
+  <p>Turning social media accounts into growth engines — organically.</p>
+  <ul class="footer-links">
+    <li><a href="#home">Home</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#projects">Projects</a></li>
+  </ul>
+  <!-- Hidden SVG defs for Instagram gradient -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <linearGradient id="ig-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#f58529"/>
+        <stop offset="50%" stop-color="#dd2a7b"/>
+        <stop offset="100%" stop-color="#515bd4"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <div class="footer-social">
+    <!-- Facebook -->
+    <a class="social-btn fb-btn" href="https://facebook.com" target="_blank" title="Facebook">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+      </svg>
+    </a>
+    <!-- Instagram -->
+    <a class="social-btn ig-btn" href="https://instagram.com" target="_blank" title="Instagram">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+      </svg>
+    </a>
+    <!-- WhatsApp -->
+    <a class="social-btn wa-btn" href="https://wa.me/+923237109015" target="_blank" title="WhatsApp">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+      </svg>
+    </a>
+    <!-- Twitter/X -->
+    <a class="social-btn tw-btn" href="https://twitter.com" target="_blank" title="Twitter / X">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+      </svg>
+    </a>
+    <!-- LinkedIn -->
+    <a class="social-btn li-btn" href="https://linkedin.com" target="_blank" title="LinkedIn">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+      </svg>
+    </a>
+    <!-- TikTok -->
+    <a class="social-btn tt-btn" href="https://tiktok.com" target="_blank" title="TikTok">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/>
+      </svg>
+    </a>
+  </div>
+  <div class="footer-copy">© 2025 GrowthLab. Crafted with ✦ by Alex Rivera. All rights reserved.</div>
+</footer>
+
+<!-- FLOATING WHATSAPP BUTTON -->
+<a class="wa-float" href="https://wa.me/+923237109015" target="_blank" title="Chat on WhatsApp">
+  <span class="wa-float-tooltip">💬 Chat with me</span>
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+</a>
+
+<script>
+// ===== SLIDER =====
+let current = 0;
+const totalSlides = 3;
+const track = document.getElementById('slidesTrack');
+const dots = document.querySelectorAll('.dot');
+const progressFill = document.getElementById('slideProgressFill');
+const counterCurrent = document.getElementById('slideCounterCurrent');
+let autoTimer;
+let progressTimer;
+let isTransitioning = false;
+const AUTO_DELAY = 5000;
+
+function updateProgress(startFresh) {
+  clearInterval(progressTimer);
+  if (startFresh) progressFill.style.transition = 'none', progressFill.style.width = '0%';
+  requestAnimationFrame(() => {
+    progressFill.style.transition = `width ${AUTO_DELAY}ms linear`;
+    progressFill.style.width = '100%';
+  });
+}
+
+function goTo(n) {
+  if (isTransitioning) return;
+  isTransitioning = true;
+  dots[current].classList.remove('active');
+  current = (n + totalSlides) % totalSlides;
+  track.style.transform = `translateX(-${current * (100 / totalSlides)}%)`;
+  dots[current].classList.add('active');
+  counterCurrent.textContent = String(current + 1).padStart(2,'0');
+  // Re-trigger content animations on active slide
+  const activeSlide = document.querySelectorAll('.slide')[current];
+  activeSlide.querySelectorAll('.slide-badge, .slide-content h1, .slide-content p, .slide-btns').forEach(el => {
+    el.style.animation = 'none';
+    el.offsetHeight;
+    el.style.animation = '';
+  });
+  updateProgress(true);
+  setTimeout(() => { isTransitioning = false; }, 750);
+  resetAuto();
+}
+
+function resetAuto() {
+  clearInterval(autoTimer);
+  autoTimer = setInterval(() => goTo(current + 1), AUTO_DELAY);
+}
+
+document.getElementById('nextBtn').onclick = () => goTo(current + 1);
+document.getElementById('prevBtn').onclick = () => goTo(current - 1);
+
+// Touch / swipe support
+let touchStartX = 0;
+document.getElementById('slider').addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive:true});
+document.getElementById('slider').addEventListener('touchend', e => {
+  const diff = touchStartX - e.changedTouches[0].clientX;
+  if (Math.abs(diff) > 50) goTo(diff > 0 ? current + 1 : current - 1);
+});
+
+// Keyboard arrows
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') goTo(current + 1);
+  if (e.key === 'ArrowLeft') goTo(current - 1);
+});
+
+updateProgress(true);
+resetAuto();
+
+// Float icons in slides
+const icons = ['📱','📲','💬','❤️','🔔','📊','🎯','✨','🚀','⭐','💡','📈'];
+[0,1,2].forEach(si => {
+  const fi = document.getElementById('fi'+si);
+  for(let i=0;i<12;i++){
+    const el = document.createElement('div');
+    el.className='float-icon';
+    el.textContent = icons[Math.floor(Math.random()*icons.length)];
+    el.style.left = Math.random()*100+'%';
+    el.style.animationDuration = (15+Math.random()*20)+'s';
+    el.style.animationDelay = (Math.random()*15)+'s';
+    el.style.fontSize = (1.5+Math.random()*2.5)+'rem';
+    fi.appendChild(el);
+  }
+});
+
+// ===== NAV SCROLL =====
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+});
+
+// ===== COUNT UP =====
+function countUp() {
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const target = +el.dataset.count;
+    let start = 0;
+    const inc = target / 60;
+    const timer = setInterval(() => {
+      start += inc;
+      el.textContent = Math.floor(start);
+      if(start >= target){ el.textContent = target + (target >= 100 ? '+' : target < 10 ? 'M+' : '+'); clearInterval(timer); }
+    }, 20);
+  });
+}
+setTimeout(countUp, 600);
+
+// ===== SKILL BARS =====
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if(e.isIntersecting) {
+      e.target.querySelectorAll('.skill-bar-fill').forEach(b => b.classList.add('animated'));
+    }
+  });
+}, {threshold:0.3});
+const aboutSection = document.getElementById('about');
+if(aboutSection) observer.observe(aboutSection);
+
+// ===== FEEDBACK DATA =====
+const feedbacks = [
+  {name:"Sarah Mitchell",role:"Fashion Brand Owner",avatar:"SM",color:"#e1306c",text:"Alex grew my Instagram from 800 to 47,000 followers in just 4 months — all organically. My sales doubled!",stars:5},
+  {name:"James Chen",role:"Tech Startup Founder",avatar:"JC",color:"#1877f2",text:"The LinkedIn strategy was absolutely game-changing. We went from invisible to landing 3 major B2B contracts.",stars:5},
+  {name:"Maria Santos",role:"Fitness Coach",avatar:"MS",color:"#ff6584",text:"My TikTok blew up after working with Alex. One video got 2M views and I gained 30K followers overnight.",stars:5},
+  {name:"David Park",role:"Restaurant Owner",avatar:"DP",color:"#43e97b",text:"Facebook page went from 200 to 15,000 local followers. Our tables are booked 3 weeks in advance now!",stars:5},
+  {name:"Emma Wilson",role:"Artist & Creator",avatar:"EW",color:"#fbbf24",text:"The YouTube SEO strategy Alex created for me doubled my subscribers in 60 days. Incredible work!",stars:5},
+  {name:"Carlos Rivera",role:"E-commerce Owner",avatar:"CR",color:"#6c63ff",text:"Instagram optimization led to a 400% increase in website traffic from social. ROI has been phenomenal.",stars:5},
+  {name:"Aisha Johnson",role:"Life Coach",avatar:"AJ",color:"#f59e0b",text:"My Twitter following grew from 500 to 18,000 in 3 months. The thread strategy is pure gold.",stars:5},
+  {name:"Tom Bradley",role:"Music Producer",avatar:"TB",color:"#8b5cf6",text:"TikTok virality strategy worked like a charm. Two of my tracks went viral and got picked up by labels!",stars:5},
+];
+
+function buildFeedback() {
+  const track = document.getElementById('feedbackTrack');
+  const doubled = [...feedbacks,...feedbacks]; // for infinite scroll
+  doubled.forEach(f => {
+    const card = document.createElement('div');
+    card.className = 'feedback-card';
+    card.innerHTML = `
+      <div class="feedback-stars">${'★'.repeat(f.stars)}</div>
+      <div class="feedback-text">"${f.text}"</div>
+      <div class="feedback-author">
+        <div class="feedback-avatar" style="background:${f.color}22;color:${f.color};font-size:0.85rem;font-weight:700">${f.avatar}</div>
+        <div class="feedback-author-info">
+          <strong>${f.name}</strong>
+          <span>${f.role}</span>
+        </div>
+      </div>
+    `;
+    track.appendChild(card);
+  });
+}
+buildFeedback();
+
+// ===== PROJECTS DATA =====
+const projects = [
+  {status:'done',title:'FitLife Gym — Instagram',desc:'Complete rebranding and growth strategy. Grew from 1.2K to 89K followers with organic content calendar.',platform:'Instagram 📸',growth:'+7,300%',progress:100},
+  {status:'done',title:'TechNova SaaS — LinkedIn',desc:'B2B authority positioning campaign. Generated 45 qualified leads in the first month through thought leadership.',platform:'LinkedIn 💼',growth:'+890%',progress:100},
+  {status:'done',title:'Bella Mia Restaurant — FB',desc:'Local Facebook community building. Went from 300 to 22,000 local page likes in 5 months.',platform:'Facebook 📘',growth:'+7,233%',progress:100},
+  {status:'done',title:'DanceWithMe Creator — TikTok',desc:'Viral content strategy. Account reached 500K followers with 4 videos exceeding 1M views each.',platform:'TikTok 🎵',growth:'+50,000%',progress:100},
+  {status:'process',title:'GreenEarth NGO — Multi-Platform',desc:'Comprehensive cross-platform campaign across Instagram, Facebook and Twitter for environmental awareness.',platform:'Multi-Platform 🌍',growth:'In Progress',progress:65},
+  {status:'process',title:'LuxeStyle Fashion — Instagram',desc:'Reels-first strategy with influencer collab framework. Currently averaging 250K views per Reel.',platform:'Instagram 📸',growth:'+180% (ongoing)',progress:45},
+  {status:'process',title:'CodeAcademy PK — YouTube',desc:'SEO-optimized tutorial channel build. On track to hit 10K subscribers within the campaign window.',platform:'YouTube ▶️',growth:'+340% (ongoing)',progress:72},
+  {status:'review',title:'MindBloom Wellness — Twitter/X',desc:'Thought leadership campaign. Content strategy drafted and analytics review in final phase.',platform:'Twitter/X 🐦',growth:'Pending Review',progress:90},
+  {status:'review',title:'UrbanEats Food Blog — Instagram',desc:'Aesthetic feed overhaul and hashtag strategy audit. Final approval from client pending.',platform:'Instagram 📸',growth:'Pending Review',progress:95},
+];
+
+function buildProjects() {
+  const grid = document.getElementById('projectsGrid');
+  projects.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = `project-card`;
+    card.dataset.status = p.status;
+    card.style.transitionDelay = (i * 0.08) + 's';
+    const statusClass = p.status === 'done' ? 'status-done' : p.status === 'process' ? 'status-process' : 'status-review';
+    const statusLabel = p.status === 'done' ? '✓ Completed' : p.status === 'process' ? '⟳ In Progress' : '◎ Under Review';
+    card.innerHTML = `
+      <div class="project-status ${statusClass}">
+        <div class="status-dot"></div>${statusLabel}
+      </div>
+      <h3>${p.title}</h3>
+      <p>${p.desc}</p>
+      <div class="project-meta">
+        <div class="project-platform">${p.platform}</div>
+        <div class="project-growth">${p.growth}</div>
+      </div>
+      ${p.progress < 100 ? `
+      <div class="project-progress">
+        <div class="project-progress-label"><span>Progress</span><span>${p.progress}%</span></div>
+        <div class="project-progress-track"><div class="project-progress-fill" data-w="${p.progress}" style="width:0%"></div></div>
+      </div>` : ''}
+    `;
+    // Ripple
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--x', (e.clientX-r.left)+'px');
+      card.style.setProperty('--y', (e.clientY-r.top)+'px');
+    });
+    grid.appendChild(card);
+  });
+
+  // Animate in + progress bars
+  const projObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if(e.isIntersecting) {
+        e.target.classList.add('visible');
+        e.target.querySelectorAll('.project-progress-fill').forEach(b => {
+          b.style.width = b.dataset.w + '%';
+        });
+        projObserver.unobserve(e.target);
+      }
+    });
+  }, {threshold:0.15});
+  document.querySelectorAll('.project-card').forEach(c => projObserver.observe(c));
+}
+buildProjects();
+
+// ===== FILTER PROJECTS =====
+function filterProjects(status, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.project-card').forEach((c, i) => {
+    const match = status === 'all' || c.dataset.status === status;
+    c.classList.toggle('hidden', !match);
+    if(match) {
+      c.style.transitionDelay = (i * 0.06) + 's';
+      c.classList.remove('visible');
+      setTimeout(() => c.classList.add('visible'), 50);
+    }
+  });
+}
+</script>
+</body>
+</html>
